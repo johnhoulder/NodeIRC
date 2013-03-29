@@ -34,6 +34,13 @@ function getChannelByName(channel){
   return false;
 }
 
+function getChannelID(channel){
+  for (var i = 0; i < chans.length; i++) {
+    if(chans[i] == channel) return i;
+  }
+  return false;
+}
+
 function checkNickname(client,nick){
   for (var i = 0; i < clients.length; i++) {
     if (clients[i]['nickname'] == nick && clients[i] != client) return true;
@@ -57,6 +64,17 @@ function sendAll(sender,channel,msg){
     var client = getClientByNickname(chan['users'][i]['nick']);
     if(client != sender){
       var data = ':' + client['hostmask'] + ' PRIVMSG ' + channel + ' :' + msg;
+      send(client,data);
+    }
+  }
+}
+
+function sendAllRaw(sender,channel,data){
+  var chan = getChannelByName(channel);
+  console.log(chan);
+  for(i=0;i<chan['users'].length;i++){
+    var client = getClientByNickname(chan['users'][i]['nick']);
+    if(client != sender){
       send(client,data);
     }
   }
@@ -162,12 +180,20 @@ var sock = net.createServer(function(client){
             if(!channelExists(chan)){
               createChannel(chan,clients[cid]['nickname']);
             }else{
-              createChannelUser(clients[cid]['nickname'],'v');
+              var user = createChannelUser(clients[cid]['nickname'],'v');
+              var channel = getChannelID(getChannelByName(chan));
+              chans[channel]['users'].push(user);
             }
-            send(client,':' + clients[cid]['hostmask'] + ' JOIN :' + chan);
-            send(client,':toxicirc.com 353 ' + clients[cid]['nickname'] + ' = ' + chan + ' :@' + clients[cid]['nickname']);
+            sendAllRaw(null,chan,':' + clients[cid]['hostmask'] + ' JOIN :' + chan);
+            var list = '';
+            for(i=0;i<getChannelByName(chan)['users'].length;i++){
+              var channel = getChannelByName(chan);
+              list += createVisualModes(channel['users'][i]['modes']) + channel['users'][i]['nick'] + ' ';
+            }
+            send(client,':toxicirc.com 353 ' + clients[cid]['nickname'] + ' = ' + chan + ' :' + list);
             send(client,':toxicirc.com 366 ' + clients[cid]['nickname'] + ' ' + chan + ' :End of /NAMES list.');
             send(client,':toxicirc.com 332 ' + clients[cid]['nickname'] + ' ' + chan + ' :' + getChannelByName(chan)['topic']);
+            sendAllRaw(client,chan,':toxicirc.com MODE ' + chan + ' :+v ' + clients[cid]['nickname']);
           }
         }
         if(ex[0] == 'WHO'){
