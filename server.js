@@ -63,7 +63,7 @@ function sendAll(sender,channel,msg){
   for(i=0;i<chan['users'].length;i++){
     var client = getClientByNickname(chan['users'][i]['nick']);
     if(client != sender){
-      var data = ':' + client['hostmask'] + ' PRIVMSG ' + channel + ' :' + msg;
+      var data = ':' + sender['hostmask'] + ' PRIVMSG ' + channel + ' :' + msg;
       send(client,data);
     }
   }
@@ -114,6 +114,7 @@ var sock = net.createServer(function(client){
   
   client.on('data',function(data){
     var cid = getClientID(client);
+    var clnt = clients[cid];
     data = data.toString();
     var lines = data.split('\n');
     lines.forEach(function(line){
