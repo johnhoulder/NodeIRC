@@ -1,3 +1,0 @@
-NodeIRC is a project by Toxic-Productions CEO GtoXic. It is an IRC server based in the NodeJS language as a demonstration of what can be achieved. The server is currently in very early development and is still a very active project.
-
-To run the server, simply use `node server.js'. This will start the server and show all input and output. Currently there is no built-in daemon mode, however, `nohup node server.js &' will put the server into an equivelant.
