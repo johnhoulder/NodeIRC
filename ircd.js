@@ -30,6 +30,14 @@ function getClientByNickname(nick){
 	return false;
 }
 
+function getClientById(id){
+	if(!clients[i]){
+		return false;
+	}else{
+		return clients[i];
+	}
+}
+
 function getChannelByName(channel){
 	for(var i=0;i<chans.length;i++) {
 		if(chans[i]['name'] == channel) return chans[i];
@@ -215,8 +223,8 @@ var sock = net.createServer(function(client){
 						if(!channelExists(chan)){
 							//createChannel(chan,clients[cid]['nickname']);
 							createChannel(chan,cid);
-						 console.log('Channel does not exist. Creating it.');
-						 var user = createChannelUser(cid,config.modesonjoin);
+							console.log('Channel does not exist. Creating it.');
+							var user = createChannelUser(cid,config.modesonjoin);
 						}else{
 							var user = createChannelUser(cid,'');
 							var channel = getChannelID(getChannelByName(chan));
@@ -236,19 +244,30 @@ var sock = net.createServer(function(client){
 							send(client,':'+config.server+' 332 ' + clients[cid]['nickname'] + ' ' + chan + ' :' + getChannelByName(chan)['topic']);
 						}
 						var channel = getChannelID(getChannelByName(chan));
-						send(client,':'+config.server+' 324 '+clients[cid]['nickname']+' '+chan+' '+chans[channel]['modes'])
-						// Why are we telling everyone they're fucking opped?
-						
-						//sendAllRaw(client,chan,':'+config.server+' MODE ' + chan + ' :+'+config.modesonjoin+' ' + clients[cid]['nickname']);
+						send(client,':'+config.server+' 324 '+clients[cid]['nickname']+' '+chan+' '+chans[channel]['modes']);
 					}
 				}else if (ex[0] == 'PART'){
 						var chan = ex[1];
 						var channel = getChannelID(getChannelByName(chan));
 						var ulist = getUlistID(chan,cid);
-						//channel['users'][ulist] = "";
-						chans[channel]['users'].splice(ulist, 1);
+						var userid = 0;
+						for(uid=0;uid<chans[channel]['users'].length;uid++){
+							if (getClientById(chans[channel]['users'][uid])['nickname'] == client['nickname']) {
+								isin = 1;
+								userid = uid;
+							}
+						}
+						chans[channel]['users'].splice(chans[channel]['users'].indexOf(chans[channel]['users'][userid]),1);
+						
 						send(client,':'+clients[cid]['hostmask']+' PART '+ex[1]);
-						sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' PART '+ex[1]);
+						if(!config['static-part']){
+							sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' PART '+ex[1]);
+						}else{
+							sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' PART '+config['static-part']);
+						}
+						if(chans[channel]['users'].length == 0){
+							chans.splice(chans.indexOf(chans[channel],1));
+						}
 				}else if(ex[0] == 'TOPIC'){
 					var chan = ex[1];
 					if(chan.substring(0,1) == '#'){
@@ -278,21 +297,25 @@ var sock = net.createServer(function(client){
 					}
 					send(client,':'+config.server+' 323 '+clients[cid]['nickname']+' :End of /LIST');
 				}else if(ex[0] == 'QUIT'){
-					//Apparently they quit :c
-					/*
 					for(i=0;i<chans.length;i++){
 						var chid = getChannelID(getChannelByName(i));
 						var isin = 0;
+						var userid = 0;
 						for(uid=0;uid<chans[cid]['users'].length;uid++){
-							if (chans[chid]['users'][uid] == client['nickname']) {
-								var isin = 1;
+							if (getClientById(chans[chid]['users'][uid])['nickname'] == client['nickname']) {
+								isin = 1;
+								userid = uid;
 							}
 						}
-						if (isin == 1) {
-							sendAllRaw(null,chans[chid]['name'],':'+clients[cid]['hostmask']+' QUIT');
+						if(isin == 1){
+							sendAllRaw(null,chans[chid]['name'],':'+clients[cid]['hostmask']+' QUIT :' + config['static-quit']);
+							chans[chid]['users'].splice(chans[chid]['users'].indexOf(chans[chid]['users'][userid]),1);
+						}
+						if(chans[chid]['users'].length == 0){
+							chans.splice(chans.indexOf(chans[chid],1));
 						}
 					}
-					*/
+					clients.splice(clients.indexOf(clients[cid],1));
 				}else if(ex[0] == 'WHO'){
 					var chan = ex[1];
 					if(chan.substring(0,1) != '#'){
@@ -301,7 +324,7 @@ var sock = net.createServer(function(client){
 						for(i=0;i<getChannelByName(chan)['users'].length;i++){
 							var cuser = getChannelByName(chan)['users'][i];
 							var user = cuser['uid'];
-							var repl = ':'+config.server+' 352 ' + chan + ' ' + clients[user]['user'] + ' ' + clients[user]['hostname'] + ' toxicirc.com ' + clients[user]['nickname'] + ' G' + createVisualModes(cuser['modes']) + ' :0 ' + clients[user]['realname'];
+							var repl = ':'+config.server+' 352 ' + chan + ' ' + clients[user]['user'] + ' ' + clients[user]['hostname'] + ' ' + config['server'] + ' ' + clients[user]['nickname'] + ' G' + createVisualModes(cuser['modes']) + ' :0 ' + clients[user]['realname'];
 							send(client,repl);
 						}
 						send(client,':'+config.server+' 314 ' + clients[cid]['hostmask'] + ' ' + chan + ' :End of /WHO list.');
@@ -329,7 +352,7 @@ var sock = net.createServer(function(client){
 							}
 						}
 					}else{
-						//Requesting user modes. Currently unimplemented
+						//Requesting/setting user modes. Currently unimplemented
 					}
 				}else{
 					send(client,':'+config.server+' 421 '+clients[cid]['nickname']+' '+ex[0]+' :Unknown command');
