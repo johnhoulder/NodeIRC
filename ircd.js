@@ -147,6 +147,7 @@ var sock = net.createServer(function(client){
 			if(line.length > 0){
 				console.log('[<-] ' + line);
 				var ex = line.split(' ');
+				ex[0] = ex[0].toUpperCase();
 				if(ex[0] == 'PING'){
 					send(client,'PONG ' + ex[1]);
 				}else if(ex[0] == 'NICK'){
@@ -169,8 +170,7 @@ var sock = net.createServer(function(client){
 					}else{
 						send(client,':'+config.server+' 433 ' + clients[cid]['nickname'] + ' :Already a user with this nickname.');
 					}
-				}
-				else if(ex[0] == 'USER'){
+				}else if(ex[0] == 'USER'){
 					var user = ex[1];
 					var real = '';
 					for(i=4;i<ex.length;i++){
@@ -183,8 +183,7 @@ var sock = net.createServer(function(client){
 					clients[cid]['hostmask'] = clients[cid]['nickname'] + '!' + clients[cid]['user'] + '@' + clients[cid]['hostname'];
 					clients[cid]['userset'] = true; // Client connected.
 					sendWelcome(client);
-				}
-				else if(ex[0] == 'PRIVMSG' || ex[0] == 'NOTICE'){
+				}else if(ex[0] == 'PRIVMSG' || ex[0] == 'NOTICE'){
 					var target = ex[1];
 					if(ex[1].substring(0,1) == "#" || ex[1].substring(0,1) == "!"){
 						if(channelExists(target)){
