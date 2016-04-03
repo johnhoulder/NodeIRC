@@ -134,12 +134,25 @@ function getUlistID(chan,uid) {
 function sendWelcome(client) {
 	var cid = getClientID(client);
 	if(clients[cid]['nickset'] == true && clients[cid]['userset'] == true) {
-		send(client,':' + config.server+ ' 001 ' + clients[cid]['nickname'] + ' :Welcome to the ' + config.name+ ' IRC Network, ' + clients[cid]['hostmask']);
-		send(client,':' + config.server+ ' 002 ' + clients[cid]['nickname'] + ' :Your host is ' + config.server+ ', running version NodeIRC v' + core['ver']);
-		send(client,':' + config.server+ ' 004 ' + clients[cid]['nickname'] + ' :' + config.server+ ' NodeIRCd-' + core['ver']+ ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ vo');
+		send(client, ':' + config.server+ ' 001 ' + clients[cid]['nickname'] + ' :Welcome to the ' + config.name+ ' IRC Network, ' + clients[cid]['hostmask']);
+		send(client, ':' + config.server+ ' 002 ' + clients[cid]['nickname'] + ' :Your host is ' + config.server+ ', running version NodeIRC v' + core['ver']);
+		send(client, ':' + config.server+ ' 004 ' + clients[cid]['nickname'] + ' :' + config.server+ ' NodeIRCd-' + core['ver']+ ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ vo');
+		sendMotd(client);
 		return true;
 	}
 	return false;
+}
+
+function sendMotd(client) {
+	var cid = getClientID(client);
+	if(clients[cid]['nickset'] == true && clients[cid]['userset'] == true) {
+		var lines = motd.split('\n');
+		send(client, ':' + config.server + ' 375 ' + ' :- ' + config.server + ' Message of the day -');
+		for(var line in lines) {
+			send(client, ':' + config.server + ' 372 ' + ' :- ' + lines[line].toString().trim().substring(0, 80));
+		}
+		send(client, ':' + config.server + ' 376 ' + ' :End of /MOTD command');
+	}
 }
 
 var sock = net.createServer(function(client) {
