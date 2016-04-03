@@ -2,99 +2,100 @@ var fs = require('fs');
 net = require('net');
 var crypto = require('crypto');
 
-var config = JSON.parse(fs.readFileSync('nodeircd.cfg','utf-8'));
+var config = JSON.parse(fs.readFileSync('nodeircd.cfg', 'utf-8'));
+var motd = fs.readFileSync('nodeircd.motd', 'utf-8');
 
 var chans = [];
 var clients = [];
 var core = [];
-core['ver'] = "1.0a";
+core['ver'] = '0.1.2';
 
-function getClientID(client){
-	for(var i=0;i<clients.length;i++){
+function getClientID(client) {
+	for(var i=0;i<clients.length;i++) {
 		if(clients[i] == client) return i;
 	}
 	return false;
 }
 
-function channelExists(chan){
-	for(var i=0;i<chans.length;i++){
+function channelExists(chan) {
+	for(var i=0;i<chans.length;i++) {
 		if(chans[i]['name'] == chan) return true;
 	}
 	return false;
 }
 
-function getClientByNickname(nick){
-	for(var i=0;i<clients.length;i++){
+function getClientByNickname(nick) {
+	for(var i=0;i<clients.length;i++) {
 		if(clients[i]['nickname'] == nick) return clients[i];
 	}
 	return false;
 }
 
-function getClientById(id){
-	if(!clients[i]){
+function getClientById(id) {
+	if(!clients[i]) {
 		return false;
 	}else{
 		return clients[i];
 	}
 }
 
-function getChannelByName(channel){
+function getChannelByName(channel) {
 	for(var i=0;i<chans.length;i++) {
 		if(chans[i]['name'] == channel) return chans[i];
 	}
 	return false;
 }
 
-function getChannelID(channel){
-	for(var i=0;i<chans.length;i++){
+function getChannelID(channel) {
+	for(var i=0;i<chans.length;i++) {
 		if(chans[i] == channel) return i;
 	}
 	return false;
 }
 
-function checkNickname(client,nick){
-	for(var i=0;i<clients.length;i++){
+function checkNickname(client,nick) {
+	for(var i=0;i<clients.length;i++) {
 		if(clients[i]['nickname'] == nick && clients[i] != client) return true;
 	}
 	return false;
 }
 
-function createVisualModes(modes){
-	return modes.replace('q','~').replace('a','&').replace('o','@').replace('h','%').replace('v','+');
+function createVisualModes(modes) {
+	return modes.replace('q', '~').replace('a', '&').replace('o', '@').replace('h', '%').replace('v', '+');
 }
 
-function send(sock,data){
+function send(sock,data) {
 	console.log('[->] ' + data);
 	sock.write(data + '\r\n');
 }
 
-function sendAll(sender,channel,msg){
+function sendAll(sender,channel,msg) {
 	var chan = getChannelByName(channel);
 	console.log(chan);
-	for(i=0;i<chan['users'].length;i++){
+	for(i=0;i<chan['users'].length;i++) {
 		var client = chan['users'][i]['uid'];
 		var client = clients[client];
-		if(client != sender){
+		if(client != sender) {
 			var data = ':' + sender['hostmask'] + ' PRIVMSG ' + channel + ' :' + msg;
 			send(client,data);
 		}
 	}
 }
 
-function sendAllRaw(sender,channel,data){
+function sendAllRaw(sender,channel,data) {
 	var chan = getChannelByName(channel);
 	console.log(chan);
-	for(i=0;i<chan['users'].length;i++){
+	for(i=0;i<chan['users'].length;i++) {
 		var client = chan['users'][i]['uid'];
 		client = clients[client];
-		if(client != sender){
+		if(client != sender) {
 			send(client,data);
 		}
 	}
 }
 
-function createChannel(cname,uid){
-	console.log("Creating channel "+cname+" with owner "+uid);
+function createChannel(cname,uid) {
+	console.log('Creating channel ' + cname+ ' with owner ' + uid);
 	var chan = [];
 	chan['name'] = cname;
 	chan['users'] = [];
@@ -107,7 +108,7 @@ function createChannel(cname,uid){
 	chans.push(chan);
 }
 
-function createChannelUser(uid,modes){
+function createChannelUser(uid,modes) {
 	// We no longer use a users nick. Now we use ID's
 	var user = [];
 	user['modes'] = modes;
@@ -115,10 +116,10 @@ function createChannelUser(uid,modes){
 	return user;
 }
 
-function cloakHost(ip){
+function cloakHost(ip) {
 	var cloaked = null;
-	var hash = crypto.createHash('md5').update(config.cloakkey+ip+config.cloakkey).digest("hex");
-	cloaked = config.cloakhost+"-"+hash.substring(0,15);
+	var hash = crypto.createHash('md5').update(config.cloakkey+ip+config.cloakkey).digest('hex');
+	cloaked = config.cloakhost+ '-' + hash.substring(0,15);
 	return cloaked;
 }
 
@@ -130,58 +131,58 @@ function getUlistID(chan,uid) {
 	return false;
 }
 
-function sendWelcome(client){
+function sendWelcome(client) {
 	var cid = getClientID(client);
-	if(clients[cid]['nickset'] == true && clients[cid]['userset'] == true){
-		send(client,':'+config.server+' 001 ' + clients[cid]['nickname'] + ' :Welcome to the '+config.name+' IRC Network, ' + clients[cid]['hostmask']);
-		send(client,':'+config.server+' 002 ' + clients[cid]['nickname'] + ' :Your host is '+config.server+', running version NodeIRC v'+core['ver']);
-		send(client,':'+config.server+' 004 ' + clients[cid]['nickname'] + ' :'+config.server+' IlkoIRCD-'+core['ver']+' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ vo');
+	if(clients[cid]['nickset'] == true && clients[cid]['userset'] == true) {
+		send(client,':' + config.server+ ' 001 ' + clients[cid]['nickname'] + ' :Welcome to the ' + config.name+ ' IRC Network, ' + clients[cid]['hostmask']);
+		send(client,':' + config.server+ ' 002 ' + clients[cid]['nickname'] + ' :Your host is ' + config.server+ ', running version NodeIRC v' + core['ver']);
+		send(client,':' + config.server+ ' 004 ' + clients[cid]['nickname'] + ' :' + config.server+ ' NodeIRCd-' + core['ver']+ ' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ vo');
 		return true;
 	}
 	return false;
 }
 
-var sock = net.createServer(function(client){
+var sock = net.createServer(function(client) {
 	console.log('Connection received.');
 	clients.push(client);
 	
-	client.on('data',function(data){
+	client.on('data',function(data) {
 		var cid = getClientID(client);
 		var clnt = clients[cid];
 		data = data.toString();
 		var lines = data.split('\n');
-		lines.forEach(function(line){
+		lines.forEach(function(line) {
 			line = line.trim();
-			if(line.length > 0){
+			if(line.length > 0) {
 				console.log('[<-] ' + line);
 				var ex = line.split(' ');
 				ex[0] = ex[0].toUpperCase();
-				if(ex[0] == 'PING'){
+				if(ex[0] == 'PING') {
 					send(client,'PONG ' + ex[1]);
-				}else if(ex[0] == 'NICK'){
+				}else if(ex[0] == 'NICK') {
 					var nick = ex[1];
-					if(!checkNickname(client,nick)){
+					if(!checkNickname(client,nick)) {
 						clients[cid]['nickset'] = true;
-						if(nick.substring(0,1) == ':'){
+						if(nick.substring(0,1) == ':') {
 							clients[cid]['nickname'] = nick.trim().substring(1);
 						}else{
 							clients[cid]['nickname'] = nick;
 						}
-						if (!clients[cid]['userset']){
+						if (!clients[cid]['userset']) {
 							// They're connecting.
-							send(client,':'+config.server+' NICK '+nick);
+							send(client,':' + config.server+ ' NICK ' + nick);
 							sendWelcome(client);
 						}else{
-							send(client,':'+clients[cid]['hostmask']+' NICK '+nick);
+							send(client,':' + clients[cid]['hostmask']+ ' NICK ' + nick);
 						}
 						clients[cid]['hostmask'] = clients[cid]['nickname'] + '!' + clients[cid]['user'] + '@' + clients[cid]['hostname'];
 					}else{
-						send(client,':'+config.server+' 433 ' + clients[cid]['nickname'] + ' :Already a user with this nickname.');
+						send(client,':' + config.server+ ' 433 ' + clients[cid]['nickname'] + ' :Already a user with this nickname.');
 					}
-				}else if(ex[0] == 'USER'){
+				}else if(ex[0] == 'USER') {
 					var user = ex[1];
 					var real = '';
-					for(i=4;i<ex.length;i++){
+					for(i=4;i<ex.length;i++) {
 						real += ' ' + ex[i];
 					}
 					real = real.trim();
@@ -191,36 +192,36 @@ var sock = net.createServer(function(client){
 					clients[cid]['hostmask'] = clients[cid]['nickname'] + '!' + clients[cid]['user'] + '@' + clients[cid]['hostname'];
 					clients[cid]['userset'] = true; // Client connected.
 					sendWelcome(client);
-				}else if(ex[0] == 'PRIVMSG' || ex[0] == 'NOTICE'){
+				}else if(ex[0] == 'PRIVMSG' || ex[0] == 'NOTICE') {
 					var target = ex[1];
-					if(ex[1].substring(0,1) == "#" || ex[1].substring(0,1) == "!"){
-						if(channelExists(target)){
+					if(ex[1].substring(0,1) == '#' || ex[1].substring(0,1) == '!') {
+						if(channelExists(target)) {
 							msg = '';
-							for(i=2;i<ex.length;i++){
+							for(i=2;i<ex.length;i++) {
 								msg += ' ' + ex[i];
 							}
 							msg = msg.trim().substring(1);
-							console.log("clients[cid]: "+clients[cid]+" target: "+target+" msg: "+msg);
+							console.log('clients[cid]: ' + clients[cid]+ ' target: ' + target+ ' msg: ' + msg);
 							sendAll(clients[cid],target,msg);
 						}
-					}else if(checkNickname(client,target)){
+					}else if(checkNickname(client,target)) {
 						var targetclient = getClientByNickname(target);
 						msg = '';
-						for(i=2;i<ex.length;i++){
+						for(i=2;i<ex.length;i++) {
 							msg += ' ' + ex[i];
 						}
 						msg = msg.trim().substring(1);
-						send(targetclient,':' + clients[cid]['hostmask'] + ' '+ex[0]+' ' + target + ' :' + msg);
+						send(targetclient,':' + clients[cid]['hostmask'] + ' ' + ex[0]+ ' ' + target + ' :' + msg);
 					}else{
-						send(client,':'+config.server+' 403 ' + target + ' :User or Channel doesn\'t exist');
+						send(client,':' + config.server+ ' 403 ' + target + ' :User or Channel doesn\'t exist');
 					}
 				}
-				else if(ex[0] == 'JOIN'){
+				else if(ex[0] == 'JOIN') {
 					var chan = ex[1];
-					if(chan.substring(0,1) != '#'){
-						send(client,':'+config.server+' 403 ' + chan + ' :Channel doesn\'t exist');
+					if(chan.substring(0,1) != '#') {
+						send(client,':' + config.server+ ' 403 ' + chan + ' :Channel doesn\'t exist');
 					}else{
-						if(!channelExists(chan)){
+						if(!channelExists(chan)) {
 							//createChannel(chan,clients[cid]['nickname']);
 							createChannel(chan,cid);
 							console.log('Channel does not exist. Creating it.');
@@ -232,26 +233,26 @@ var sock = net.createServer(function(client){
 						}
 						sendAllRaw(null,chan,':' + clients[cid]['hostmask'] + ' JOIN :' + chan);
 						var list = '';
-						for(i=0;i<getChannelByName(chan)['users'].length;i++){
+						for(i=0;i<getChannelByName(chan)['users'].length;i++) {
 							var channel = getChannelByName(chan);
 							var uid = channel['users'][i]['uid'];
-							console.log('Getting user list for user '+i);
+							console.log('Getting user list for user ' + i);
 							list += createVisualModes(channel['users'][i]['modes']) + clients[uid]['nickname'] + ' ';
 						}
-						send(client,':'+config.server+' 353 ' + clients[cid]['nickname'] + ' = ' + chan + ' :' + list);
-						send(client,':'+config.server+' 366 ' + clients[cid]['nickname'] + ' ' + chan + ' :End of /NAMES list.');
-						if(getChannelByName(chan)['topic'] != false){
-							send(client,':'+config.server+' 332 ' + clients[cid]['nickname'] + ' ' + chan + ' :' + getChannelByName(chan)['topic']);
+						send(client,':' + config.server+ ' 353 ' + clients[cid]['nickname'] + ' = ' + chan + ' :' + list);
+						send(client,':' + config.server+ ' 366 ' + clients[cid]['nickname'] + ' ' + chan + ' :End of /NAMES list.');
+						if(getChannelByName(chan)['topic'] != false) {
+							send(client,':' + config.server+ ' 332 ' + clients[cid]['nickname'] + ' ' + chan + ' :' + getChannelByName(chan)['topic']);
 						}
 						var channel = getChannelID(getChannelByName(chan));
-						send(client,':'+config.server+' 324 '+clients[cid]['nickname']+' '+chan+' '+chans[channel]['modes']);
+						send(client,':' + config.server+ ' 324 ' + clients[cid]['nickname']+ ' ' + chan+ ' ' + chans[channel]['modes']);
 					}
-				}else if (ex[0] == 'PART'){
+				}else if (ex[0] == 'PART') {
 						var chan = ex[1];
 						var channel = getChannelID(getChannelByName(chan));
 						var ulist = getUlistID(chan,cid);
 						var userid = 0;
-						for(uid=0;uid<chans[channel]['users'].length;uid++){
+						for(uid=0;uid<chans[channel]['users'].length;uid++) {
 							if (getClientById(chans[channel]['users'][uid])['nickname'] == client['nickname']) {
 								isin = 1;
 								userid = uid;
@@ -259,94 +260,94 @@ var sock = net.createServer(function(client){
 						}
 						chans[channel]['users'].splice(chans[channel]['users'].indexOf(chans[channel]['users'][userid]),1);
 						
-						send(client,':'+clients[cid]['hostmask']+' PART '+ex[1]);
-						if(!config['static-part']){
-							sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' PART '+ex[1]);
+						send(client,':' + clients[cid]['hostmask']+ ' PART ' + ex[1]);
+						if(!config['static-part']) {
+							sendAllRaw(null,chan,':' + clients[cid]['hostmask']+ ' PART ' + ex[1]);
 						}else{
-							sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' PART '+config['static-part']);
+							sendAllRaw(null,chan,':' + clients[cid]['hostmask']+ ' PART ' + config['static-part']);
 						}
-						if(chans[channel]['users'].length == 0){
+						if(chans[channel]['users'].length == 0) {
 							chans.splice(chans.indexOf(chans[channel],1));
 						}
-				}else if(ex[0] == 'TOPIC'){
+				}else if(ex[0] == 'TOPIC') {
 					var chan = ex[1];
-					if(chan.substring(0,1) == '#'){
+					if(chan.substring(0,1) == '#') {
 						var topic = '';
-						for(i=2;i<ex.length;i++){
+						for(i=2;i<ex.length;i++) {
 							topic += ' ' + ex[i];
 						}
 						topic = topic.trim().substring(1);
-						sendAllRaw(null,chan,':'+clients[cid]['hostmask']+' TOPIC '+chan+' :'+topic);
+						sendAllRaw(null,chan,':' + clients[cid]['hostmask']+ ' TOPIC ' + chan+ ' :' + topic);
 						var channelid = getChannelID(getChannelByName(chan));
-						console.log('Trying to set topic on '+channelid+' which is '+chans[channelid]['name']);
-						if(topic != ''){
+						console.log('Trying to set topic on ' + channelid+ ' which is ' + chans[channelid]['name']);
+						if(topic != '') {
 							chans[channelid]['topic'] = topic;
 						}else{
 							chans[channelid]['topic'] = false;
 						}
 					}
-				}else if(ex[0] == 'LIST'){
+				}else if(ex[0] == 'LIST') {
 					var chan = ex[0];
-					for(i=0;i<chans.length;i++){
+					for(i=0;i<chans.length;i++) {
 						var channel = chans[i];
-						var reply = ':'+config.server+' 322 '+clients[cid]['nickname']+' '+channel['name']+' '+channel['users'].length+' :[+'+channel['modes']+']';
-						if(channel['topic'] != false){
-							reply += ' '+channel['topic'];
+						var reply = ':' + config.server+ ' 322 ' + clients[cid]['nickname']+ ' ' + channel['name']+ ' ' + channel['users'].length+ ' :[+ ' + channel['modes']+ ']';
+						if(channel['topic'] != false) {
+							reply += ' ' + channel['topic'];
 						}
 						send(client,reply);
 					}
-					send(client,':'+config.server+' 323 '+clients[cid]['nickname']+' :End of /LIST');
-				}else if(ex[0] == 'QUIT'){
-					for(i=0;i<chans.length;i++){
+					send(client,':' + config.server+ ' 323 ' + clients[cid]['nickname']+ ' :End of /LIST');
+				}else if(ex[0] == 'QUIT') {
+					for(i=0;i<chans.length;i++) {
 						var chid = getChannelID(getChannelByName(i));
 						var isin = 0;
 						var userid = 0;
-						for(uid=0;uid<chans[cid]['users'].length;uid++){
+						for(uid=0;uid<chans[cid]['users'].length;uid++) {
 							if (getClientById(chans[chid]['users'][uid])['nickname'] == client['nickname']) {
 								isin = 1;
 								userid = uid;
 							}
 						}
-						if(isin == 1){
-							sendAllRaw(null,chans[chid]['name'],':'+clients[cid]['hostmask']+' QUIT :' + config['static-quit']);
+						if(isin == 1) {
+							sendAllRaw(null,chans[chid]['name'],':' + clients[cid]['hostmask']+ ' QUIT :' + config['static-quit']);
 							chans[chid]['users'].splice(chans[chid]['users'].indexOf(chans[chid]['users'][userid]),1);
 						}
-						if(chans[chid]['users'].length == 0){
+						if(chans[chid]['users'].length == 0) {
 							chans.splice(chans.indexOf(chans[chid],1));
 						}
 					}
 					clients.splice(clients.indexOf(clients[cid],1));
-				}else if(ex[0] == 'WHO'){
+				}else if(ex[0] == 'WHO') {
 					var chan = ex[1];
-					if(chan.substring(0,1) != '#'){
-						send(client,':'+config.server+' 403 ' + chan + ' :User/Channel doesn\'t exist');
+					if(chan.substring(0,1) != '#') {
+						send(client,':' + config.server+ ' 403 ' + chan + ' :User/Channel doesn\'t exist');
 					}else{
-						for(i=0;i<getChannelByName(chan)['users'].length;i++){
+						for(i=0;i<getChannelByName(chan)['users'].length;i++) {
 							var cuser = getChannelByName(chan)['users'][i];
 							var user = cuser['uid'];
-							var repl = ':'+config.server+' 352 ' + chan + ' ' + clients[user]['user'] + ' ' + clients[user]['hostname'] + ' ' + config['server'] + ' ' + clients[user]['nickname'] + ' G' + createVisualModes(cuser['modes']) + ' :0 ' + clients[user]['realname'];
+							var repl = ':' + config.server+ ' 352 ' + chan + ' ' + clients[user]['user'] + ' ' + clients[user]['hostname'] + ' ' + config['server'] + ' ' + clients[user]['nickname'] + ' G' + createVisualModes(cuser['modes']) + ' :0 ' + clients[user]['realname'];
 							send(client,repl);
 						}
-						send(client,':'+config.server+' 314 ' + clients[cid]['hostmask'] + ' ' + chan + ' :End of /WHO list.');
+						send(client,':' + config.server+ ' 314 ' + clients[cid]['hostmask'] + ' ' + chan + ' :End of /WHO list.');
 					}
-				}else if(ex[0] == 'MODE'){
+				}else if(ex[0] == 'MODE') {
 					var chan = ex[1];
-					if(chan.substring(0,1) == '#'){
-						if(ex[2] == '+b' && !ex[3]){
+					if(chan.substring(0,1) == '#') {
+						if(ex[2] == ' + b' && !ex[3]) {
 							// Requested ban list.
-							send(client,':'+config.server+' 368 '+clients[cid]['nickname']+' '+chan+' :End of Channel Ban List');
+							send(client,':' + config.server+ ' 368 ' + clients[cid]['nickname']+ ' ' + chan+ ' :End of Channel Ban List');
 						}else{
-							if(!ex[2]){
+							if(!ex[2]) {
 								// Requested current modes.
-								console.log("User requested modes.");
-								send(client,':'+config.server+' MODE '+chan+' +'+getChannelByName(chan)['modes']);
+								console.log('User requested modes.');
+								send(client,':' + config.server+ ' MODE ' + chan+ ' + ' + getChannelByName(chan)['modes']);
 							}else{
 								// Setting a mode(s)
-								console.log("User set modes "+ex[2]);
+								console.log('User set modes ' + ex[2]);
 								var modes = ex[2];
-								if (ex[3]) { modes += " "+ex[3]; }
-								sendAllRaw(client,chan,':'+clients[cid]['hostmask']+' MODE '+chan+' '+modes);
-								send(client,':'+clients[cid]['hostmask']+' MODE '+chan+' '+modes);
+								if (ex[3]) { modes += ' ' + ex[3]; }
+								sendAllRaw(client,chan,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
+								send(client,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
 								var channelid = getChannelID(getChannelByName(chan));
 								chans[channelid]['modes'] += modes.trim().substring(1);
 							}
@@ -355,7 +356,7 @@ var sock = net.createServer(function(client){
 						//Requesting/setting user modes. Currently unimplemented
 					}
 				}else{
-					send(client,':'+config.server+' 421 '+clients[cid]['nickname']+' '+ex[0]+' :Unknown command');
+					send(client,':' + config.server+ ' 421 ' + clients[cid]['nickname']+ ' ' + ex[0]+ ' :Unknown command');
 				}
 			}
 		});

@@ -1,0 +1,19 @@
+{
+  "name": "nodeircd",
+  "version": "0.1.2",
+  "description": "",
+  "main": "ircd.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnhoulder/NodeIRC.git"
+  },
+  "author": "John Houlder <admin@toxic-productions.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/johnhoulder/NodeIRC/issues"
+  },
+  "homepage": "https://github.com/johnhoulder/NodeIRC#readme"
+}
