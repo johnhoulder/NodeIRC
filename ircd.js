@@ -332,28 +332,30 @@ var sock = net.createServer(function(client) {
 					}
 				}else if(ex[0] == 'MODE') {
 					var chan = ex[1];
-					if(chan.substring(0,1) == '#') {
-						if(ex[2] == ' + b' && !ex[3]) {
-							// Requested ban list.
-							send(client,':' + config.server+ ' 368 ' + clients[cid]['nickname']+ ' ' + chan+ ' :End of Channel Ban List');
-						}else{
-							if(!ex[2]) {
-								// Requested current modes.
-								console.log('User requested modes.');
-								send(client,':' + config.server+ ' MODE ' + chan+ ' + ' + getChannelByName(chan)['modes']);
+					if(chan !== undefined) {
+						if(chan.substring(0,1) == '#') {
+							if(ex[2] == '+b' && !ex[3]) {
+								// Requested ban list.
+								send(client,':' + config.server+ ' 368 ' + clients[cid]['nickname']+ ' ' + chan+ ' :End of Channel Ban List');
 							}else{
-								// Setting a mode(s)
-								console.log('User set modes ' + ex[2]);
-								var modes = ex[2];
-								if (ex[3]) { modes += ' ' + ex[3]; }
-								sendAllRaw(client,chan,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
-								send(client,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
-								var channelid = getChannelID(getChannelByName(chan));
-								chans[channelid]['modes'] += modes.trim().substring(1);
+								if(!ex[2]) {
+									// Requested current modes.
+									console.log('User requested modes.');
+									send(client,':' + config.server+ ' MODE ' + chan + ' +' + getChannelByName(chan)['modes']);
+								}else{
+									// Setting a mode(s)
+									console.log('User set modes ' + ex[2]);
+									var modes = ex[2];
+									if (ex[3]) { modes += ' ' + ex[3]; }
+									sendAllRaw(client,chan,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
+									send(client,':' + clients[cid]['hostmask']+ ' MODE ' + chan+ ' ' + modes);
+									var channelid = getChannelID(getChannelByName(chan));
+									chans[channelid]['modes'] += modes.trim().substring(1);
+								}
 							}
+						}else{
+							//Requesting/setting user modes. Currently unimplemented
 						}
-					}else{
-						//Requesting/setting user modes. Currently unimplemented
 					}
 				}else{
 					send(client,':' + config.server+ ' 421 ' + clients[cid]['nickname']+ ' ' + ex[0]+ ' :Unknown command');
